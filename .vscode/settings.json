@@ -1,7 +1,0 @@
-{
-    "clangd.arguments": [
-        "--compile-commands-dir=./build",
-    ],
-    "clangd.checkUpdates": true,
-    "clangd.onConfigChanged": "restart"
-} 
