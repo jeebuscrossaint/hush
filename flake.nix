@@ -12,26 +12,36 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        packages.default = pkgs.stdenv.mkDerivation {
-          name = "hush";
+        packages.default = pkgs.buildMesonPackage {
+          pname = "hush";
+          version = "0.1.0";
+
           src = ./.;
-          
+
           nativeBuildInputs = with pkgs; [
-            gcc
-            cmake
+            meson
+            ninja
             pkg-config
           ];
 
-          cmakeFlags = [
-            "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_CXX_FLAGS=-O3"
+          buildInputs = with pkgs; [
+            # Add any runtime deps here (none yet)
           ];
+
+          # Optional: If you have man pages, completion, etc.
+          # installPhase = ''
+          #   runHook preInstall
+          #   mkdir -p $out/bin
+          #   cp hush $out/bin/
+          #   runHook postInstall
+          # '';
         };
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             gcc
-            cmake
+            meson
+            ninja
             pkg-config
             gdb
             clang-tools # for clangd
