@@ -7,6 +7,7 @@
 #include "readline.h"
 #include "splitline.h"
 #include "execute.h"
+#include "execute.h"
 
 void hush_loop(void);
 
