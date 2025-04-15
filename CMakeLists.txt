@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set C standard and optimization flags
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native -flto -fno-plt -fno-exceptions -fno-rtti -fomit-frame-pointer -pipe")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe")
 
 # Include the header directory
 include_directories(include)
