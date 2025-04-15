@@ -46,6 +46,7 @@
             pkg-config
             valgrind
             bear
+            glibc
           ];
 
           shellHook = ''

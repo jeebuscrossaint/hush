@@ -1,0 +1,8 @@
+{
+        "clangd.arguments": [
+          "--compile-commands-dir=.",
+          "--query-driver=/nix/store/*-gcc-wrapper-*/bin/*",
+          "--header-insertion=never"
+        ]
+}
+      
