@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -march=native -flto -fno-plt -fno-exceptions -fno-rtti -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/main.c.o -c /home/amarnath/Projects/hush/main.c",
+  "file": "/home/amarnath/Projects/hush/main.c",
+  "output": "CMakeFiles/hush.dir/main.c.o"
+}
+]

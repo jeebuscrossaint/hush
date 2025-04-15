@@ -1,5 +1,10 @@
 /build
 /.cache
+CMakeCache.txt
+CMakeFiles
+result
+Makefile
+cmake_install.cmake
 
 # Prerequisites
 *.d
