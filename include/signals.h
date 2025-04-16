@@ -8,6 +8,9 @@
 // Global flag to track if a child process is running
 extern volatile sig_atomic_t child_running;
 
+// Flag to indicate a signal was received
+extern volatile sig_atomic_t signal_received;
+
 // Set up signal handlers for the shell
 void setup_signal_handlers(void);
 
