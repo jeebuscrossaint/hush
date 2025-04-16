@@ -1,6 +1,7 @@
 #include "loop.h"
 #include "environment.h"
 #include "signals.h"
+#include "history.h"
 
 void hush_loop(void)
 {
@@ -9,11 +10,7 @@ void hush_loop(void)
     int status;
 
     do {
-        // Print the prompt
-        printf("$ ");
-        fflush(stdout);
-
-        // Read input
+        // Read input (readline function now handles prompt display)
         line = hush_read_line();
 
         // Empty line check
@@ -21,6 +18,14 @@ void hush_loop(void)
             free(line);
             continue;
         }
+
+        // Expand history references
+        char *expanded_history = expand_history(line);
+        free(line);
+        line = expanded_history;
+
+        // Add to history
+        add_to_history(line);
 
         // Process the line
         char *expanded_line = expand_variables(line);

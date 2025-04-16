@@ -2,7 +2,7 @@
 #define SPLITLINE_H
 
 #define HUSH_TOK_BUFSIZE 64
-#define HUSH_TOK_DELIM " \t\r\n\a"
+#define HUSH_TOK_DELIM " \t\r\n\a|"  // Add pipe to delimiters
 
 #include <stdlib.h>
 #include <string.h>
