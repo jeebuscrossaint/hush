@@ -195,6 +195,9 @@ char *hush_read_line(void) {
 
     buffer[0] = '\0';
 
+    // Show the initial prompt
+    refresh_line(buffer, position, length, 2);
+
     // Main input loop
     while (1) {
         int c = read_key();
@@ -210,17 +213,20 @@ char *hush_read_line(void) {
             case '\r':
             case '\n':
                 // Enter key - finish editing
-                write(STDOUT_FILENO, "\r\n", 2);
-                disable_raw_mode();
+                {
+                    ssize_t ret = write(STDOUT_FILENO, "\r\n", 2);
+                    (void)ret; // Suppress the warning
+                    disable_raw_mode();
 
-                if (length == 0) {
-                    buffer[0] = '\0';
-                } else {
-                    buffer[length] = '\0';
+                    if (length == 0) {
+                        buffer[0] = '\0';
+                    } else {
+                        buffer[length] = '\0';
+                    }
+
+                    if (current_line) free(current_line);
+                    return buffer;
                 }
-
-                if (current_line) free(current_line);
-                return buffer;
 
             case BACKSPACE:
             case CTRL_KEY('h'):
@@ -304,9 +310,13 @@ char *hush_read_line(void) {
 
             case CTRL_KEY('l'):
                 // Clear screen (Ctrl+L)
-                write(STDOUT_FILENO, "\x1b[2J", 4);
-                write(STDOUT_FILENO, "\x1b[H", 3);
-                refresh_line(buffer, position, length, 2);
+                {
+                    ssize_t ret = write(STDOUT_FILENO, "\x1b[2J", 4);
+                    (void)ret; // Suppress the warning
+                    ret = write(STDOUT_FILENO, "\x1b[H", 3);
+                    (void)ret; // Suppress the warning
+                    refresh_line(buffer, position, length, 2);
+                }
                 break;
 
             default:

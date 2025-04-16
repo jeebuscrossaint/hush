@@ -7,6 +7,12 @@
 },
 {
   "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/command_sub.c.o -c /home/amarnath/Projects/hush/src/command_sub.c",
+  "file": "/home/amarnath/Projects/hush/src/command_sub.c",
+  "output": "CMakeFiles/hush.dir/src/command_sub.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
   "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/environment.c.o -c /home/amarnath/Projects/hush/src/environment.c",
   "file": "/home/amarnath/Projects/hush/src/environment.c",
   "output": "CMakeFiles/hush.dir/src/environment.c.o"
@@ -19,9 +25,21 @@
 },
 {
   "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/glob.c.o -c /home/amarnath/Projects/hush/src/glob.c",
+  "file": "/home/amarnath/Projects/hush/src/glob.c",
+  "output": "CMakeFiles/hush.dir/src/glob.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
   "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/history.c.o -c /home/amarnath/Projects/hush/src/history.c",
   "file": "/home/amarnath/Projects/hush/src/history.c",
   "output": "CMakeFiles/hush.dir/src/history.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/jobs.c.o -c /home/amarnath/Projects/hush/src/jobs.c",
+  "file": "/home/amarnath/Projects/hush/src/jobs.c",
+  "output": "CMakeFiles/hush.dir/src/jobs.c.o"
 },
 {
   "directory": "/home/amarnath/Projects/hush",

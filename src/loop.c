@@ -2,6 +2,7 @@
 #include "environment.h"
 #include "signals.h"
 #include "history.h"
+#include "command_sub.h"
 
 void hush_loop(void)
 {
@@ -23,6 +24,11 @@ void hush_loop(void)
         char *expanded_history = expand_history(line);
         free(line);
         line = expanded_history;
+
+        // Perform command substitution
+        char *cmd_substituted = perform_command_substitution(line);
+        free(line);
+        line = cmd_substituted;
 
         // Add to history
         add_to_history(line);
