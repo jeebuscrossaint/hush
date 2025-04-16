@@ -1,16 +1,19 @@
 #include "builtins.h"
+#include "environment.h"
 
 // Define the arrays here - only once in the entire program
 char *builtin_str[] = {
     "cd",
     "help",
-    "exit"
+    "exit",
+    "export"
 };
 
 int (*builtin_func[])(char **) = {
     &hush_cd,
     &hush_help,
-    &hush_exit
+    &hush_exit,
+    &hush_export
 };
 
 int hush_num_builtins()

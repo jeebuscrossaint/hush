@@ -12,7 +12,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -fno-plt -fno-exceptions -fomit-fr
 include_directories(include)
 
 # Recursively get all .c files in the src directory and subdirectories
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS main.c src/*.c)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
 
 # You can add more directories here if needed, e.g.
 # file(GLOB_RECURSE MORE_SOURCES CONFIGURE_DEPENDS otherdir/*.c)
