@@ -1,6 +1,12 @@
 [
 {
   "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/alias.c.o -c /home/amarnath/Projects/hush/src/alias.c",
+  "file": "/home/amarnath/Projects/hush/src/alias.c",
+  "output": "CMakeFiles/hush.dir/src/alias.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
   "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/builtins.c.o -c /home/amarnath/Projects/hush/src/builtins.c",
   "file": "/home/amarnath/Projects/hush/src/builtins.c",
   "output": "CMakeFiles/hush.dir/src/builtins.c.o"
@@ -10,6 +16,12 @@
   "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/command_sub.c.o -c /home/amarnath/Projects/hush/src/command_sub.c",
   "file": "/home/amarnath/Projects/hush/src/command_sub.c",
   "output": "CMakeFiles/hush.dir/src/command_sub.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/completion.c.o -c /home/amarnath/Projects/hush/src/completion.c",
+  "file": "/home/amarnath/Projects/hush/src/completion.c",
+  "output": "CMakeFiles/hush.dir/src/completion.c.o"
 },
 {
   "directory": "/home/amarnath/Projects/hush",

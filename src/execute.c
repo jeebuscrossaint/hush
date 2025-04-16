@@ -2,6 +2,7 @@
 #include "redirection.h"
 #include "pipes.h"
 #include "glob.h"
+#include "alias.h"
 
 #include <sys/stat.h>
 #include <limits.h>
@@ -128,10 +129,11 @@ int hush_execute(char **args)
     result = hush_launch(expanded_args);
 
     // Free the expanded args
-    for (i = 0; expanded_args[i] != NULL; i++) {
-        free(expanded_args[i]);
-    }
-    free(expanded_args);
-
+    if (expanded_args != args) {
+            for (i = 0; expanded_args[i] != NULL; i++) {
+                free(expanded_args[i]);
+            }
+            free(expanded_args);
+        }
     return result;
 }

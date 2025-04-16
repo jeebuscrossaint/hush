@@ -6,6 +6,9 @@
 #include <termios.h>
 #include <ctype.h>
 #include <sys/ioctl.h>
+#include "completion.h"
+
+#define TAB 9
 
 // Terminal attributes
 static struct termios orig_termios;
@@ -273,6 +276,133 @@ char *hush_read_line(void) {
                 }
                 break;
 
+                case TAB:
+                    // Tab key - handle completion
+                    {
+                        // Save the current terminal state
+                        buffer[length] = '\0';
+
+                        // Find the start of the current word
+                        int word_start = position;
+                        while (word_start > 0 && !isspace(buffer[word_start - 1])) {
+                            word_start--;
+                        }
+
+                        // Extract the current word
+                        char current_word[HUSH_RL_BUFSIZE];
+                        strncpy(current_word, buffer + word_start, position - word_start);
+                        current_word[position - word_start] = '\0';
+
+                        // Get completions
+                        int count;
+                        char **completions = get_completions(current_word, &count);
+
+                        if (count == 0) {
+                            // No completions available
+                            // Use a bell character to indicate no completions
+                            char bell = '\a';
+                            if (write(STDOUT_FILENO, &bell, 1) == -1) { /* ignore error */ }
+                        }
+                        else if (count == 1) {
+                            // Just one completion - use it directly
+
+                            // Delete the current word
+                            memmove(&buffer[word_start], &buffer[position], length - position + 1);
+                            length -= (position - word_start);
+                            position = word_start;
+
+                            // Insert the completion
+                            int comp_len = strlen(completions[0]);
+                            if (length + comp_len >= bufsize) {
+                                bufsize = (length + comp_len) * 2;
+                                buffer = realloc(buffer, bufsize);
+                                if (!buffer) {
+                                    perror("hush: allocation error");
+                                    exit(EXIT_FAILURE);
+                                }
+                            }
+
+                            memmove(&buffer[position + comp_len], &buffer[position], length - position + 1);
+                            memcpy(&buffer[position], completions[0], comp_len);
+                            position += comp_len;
+                            length += comp_len;
+                        }
+                        else {
+                            // Multiple completions
+
+                            // Find longest common prefix manually
+                            char common[HUSH_RL_BUFSIZE] = {0};
+                            strcpy(common, completions[0]);
+                            int common_len = strlen(common);
+
+                            for (int i = 1; i < count && common_len > 0; i++) {
+                                int j;
+                                for (j = 0; j < common_len && completions[i][j] == common[j]; j++) {
+                                    // Continue while characters match
+                                }
+                                common_len = j;
+                                common[common_len] = '\0';
+                            }
+
+                            if (strlen(common) > strlen(current_word)) {
+                                // Common prefix is longer than current word - use it
+
+                                // Delete the current word
+                                memmove(&buffer[word_start], &buffer[position], length - position + 1);
+                                length -= (position - word_start);
+                                position = word_start;
+
+                                // Insert the common prefix
+                                int common_len = strlen(common);
+                                if (length + common_len >= bufsize) {
+                                    bufsize = (length + common_len) * 2;
+                                    buffer = realloc(buffer, bufsize);
+                                    if (!buffer) {
+                                        perror("hush: allocation error");
+                                        exit(EXIT_FAILURE);
+                                    }
+                                }
+
+                                memmove(&buffer[position + common_len], &buffer[position], length - position + 1);
+                                memcpy(&buffer[position], common, common_len);
+                                position += common_len;
+                                length += common_len;
+                            }
+                            else if (count > 1) {
+                                // No common prefix beyond current word - show all completions
+                                char newline = '\n';
+
+                                // Write a newline to start fresh
+                                if (write(STDOUT_FILENO, &newline, 1) == -1) { /* ignore error */ }
+
+                                // Show the completions
+                                for (int i = 0; i < count; i++) {
+                                    // Add spacing between items
+                                    if (i > 0 && i % 4 == 0) {
+                                        if (write(STDOUT_FILENO, &newline, 1) == -1) { /* ignore error */ }
+                                    }
+
+                                    // Print the completion with padding
+                                    char display[100];
+                                    int len = snprintf(display, sizeof(display), "%-20s", completions[i]);
+                                    if (write(STDOUT_FILENO, display, len) == -1) { /* ignore error */ }
+                                }
+
+                                // End with a newline
+                                if (write(STDOUT_FILENO, &newline, 1) == -1) { /* ignore error */ }
+                            }
+                        }
+
+                        // Clean up
+                        for (int i = 0; i < count; i++) {
+                            free(completions[i]);
+                        }
+                        free(completions);
+
+                        // Redraw the prompt and current line
+                        refresh_line(buffer, position, length, 2);
+                    }
+                    break;
             case ARROW_DOWN:
                 // Navigate history down
                 if (history_index < history_count) {

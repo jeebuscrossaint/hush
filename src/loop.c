@@ -3,9 +3,9 @@
 #include "signals.h"
 #include "history.h"
 #include "command_sub.h"
+#include "alias.h"
 
-void hush_loop(void)
-{
+void hush_loop(void) {
     char *line;
     char **args;
     int status;
@@ -38,7 +38,18 @@ void hush_loop(void)
         free(line);
 
         args = hush_split_line(expanded_line);
-        status = hush_execute(args);
+
+        // Expand aliases (if needed - this may already be handled in execute.c)
+        char **expanded_args = expand_aliases(args);
+        status = hush_execute(expanded_args);
+
+        // Clean up - only free expanded_args if it's different from args
+        if (expanded_args != args) {
+            for (int i = 0; expanded_args[i] != NULL; i++) {
+                free(expanded_args[i]);
+            }
+            free(expanded_args);
+        }
 
         free(expanded_line);
         free(args);

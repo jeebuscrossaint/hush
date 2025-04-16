@@ -3,6 +3,7 @@
 #include "signals.h"
 #include "history.h"
 #include "readline.h"
+#include "alias.h"
 
 int main(int argc, char **argv)
 {
@@ -14,6 +15,8 @@ int main(int argc, char **argv)
 
     // Make sure terminal gets reset properly if shell exits
     atexit(disable_raw_mode);
+
+    init_aliases();
 
     // Start the shell loop
     hush_loop();
