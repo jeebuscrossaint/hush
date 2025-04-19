@@ -4,6 +4,7 @@
 #include "history.h"
 #include "readline.h"
 #include "alias.h"
+#include "dir_stack.h"
 
 int main(int argc, char **argv)
 {
@@ -19,22 +20,27 @@ int main(int argc, char **argv)
     // Initialize aliases
     init_aliases();
 
+    // Initialize directory stack
+    init_dir_stack();
+
     // Start the shell loop
     hush_loop();
 
     // Save command history before exiting
     hush_save_history();
 
-    // Cleanup readline before deprep terminal
+    // Cleanup readline
     hush_readline_cleanup();
 
-    // Cleanup terminal
-    rl_deprep_terminal();
+    // Clean up directory stack
+    free_dir_stack();
 
     // Free history memory
     for (int i = 0; i < hush_history_count; i++) {
         free(hush_history_list[i]);
     }
+
+    rl_deprep_terminal();
 
     return EXIT_SUCCESS;
 }

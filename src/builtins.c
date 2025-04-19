@@ -2,6 +2,7 @@
 #include "environment.h"
 #include "history.h"
 #include "alias.h"
+#include "dir_stack.h"
 
 // Define the arrays here - only once in the entire program
 char *builtin_str[] = {
@@ -11,7 +12,10 @@ char *builtin_str[] = {
     "export",
     "history",
     "alias",
-    "unalias"
+    "unalias",
+    "pushd",
+    "popd",
+    "dirs"
 };
 
 int (*builtin_func[])(char **) = {
@@ -21,7 +25,10 @@ int (*builtin_func[])(char **) = {
     &hush_export,
     &hush_history,
     &hush_alias,
-    &hush_unalias
+    &hush_unalias,
+    &hush_pushd,
+    &hush_popd,
+    &hush_dirs
 };
 
 int hush_num_builtins()
