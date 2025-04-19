@@ -9,6 +9,7 @@
 #include <pwd.h>
 #include <ctype.h>
 #include <errno.h>
+#include "builtins.h"
 
 #define MANY_COMPLETIONS_THRESHOLD 100
 
@@ -241,6 +242,13 @@ char **get_completions(const char *input, int *count) {
     // Setup default return values
     *count = 0;
 
+    // Check for NULL input
+    if (!input) {
+        char **result = malloc(sizeof(char *));
+        if (result) result[0] = NULL;
+        return result;
+    }
+
     // Check if empty or first word
     int is_first_word = 1;
     const char *check = input;
@@ -252,11 +260,17 @@ char **get_completions(const char *input, int *count) {
     // If we found more content, it's not the first word
     if (*check) is_first_word = 0;
 
-    if (!input || input[0] == '\0') {
-        // Empty input - list executables in PATH
+    if (input[0] == '\0') {
+        // Empty input - list executables in PATH and builtins
         completion_list completions;
         completion_init(&completions);
 
+        // Add builtins first
+        for (int i = 0; i < hush_num_builtins(); i++) {
+            completion_add(&completions, builtin_str[i]);
+        }
+
+        // Then add executables
         add_executables_from_path(&completions, "");
 
         // Sort completions
@@ -281,7 +295,7 @@ char **get_completions(const char *input, int *count) {
         } else {
             // No completions
             result = malloc(sizeof(char *));
-            result[0] = NULL;
+            if (result) result[0] = NULL;
         }
 
         *count = completions.count;
@@ -292,14 +306,31 @@ char **get_completions(const char *input, int *count) {
     // Parse the input into directory and file prefix
     parse_path(input, &dir_path, &file_prefix);
 
+    // Safety check for null pointers
+    if (!dir_path || !file_prefix) {
+        // Allocation failed in parse_path
+        if (dir_path) free(dir_path);
+        if (file_prefix) free(file_prefix);
+        char **result = malloc(sizeof(char *));
+        if (result) result[0] = NULL;
+        *count = 0;
+        return result;
+    }
+
     // If this is the first word and doesn't start with ./ or / or ~,
     // it's likely a command rather than a file
-    if (is_first_word &&
-        input[0] != '.' && input[0] != '/' && input[0] != '~') {
-
+    if (is_first_word && input[0] != '.' && input[0] != '/' && input[0] != '~') {
         completion_list completions;
         completion_init(&completions);
 
+        // First add builtins that match
+        for (int i = 0; i < hush_num_builtins(); i++) {
+            if (strncmp(builtin_str[i], file_prefix, strlen(file_prefix)) == 0) {
+                completion_add(&completions, builtin_str[i]);
+            }
+        }
+
+        // Then add executables
         add_executables_from_path(&completions, file_prefix);
 
         // Sort completions
@@ -326,7 +357,7 @@ char **get_completions(const char *input, int *count) {
         } else {
             // No completions
             result = malloc(sizeof(char *));
-            result[0] = NULL;
+            if (result) result[0] = NULL;
         }
 
         *count = completions.count;
@@ -412,7 +443,7 @@ char **get_completions(const char *input, int *count) {
     } else {
         // No completions found
         result = malloc(sizeof(char *));
-        result[0] = NULL;
+        if (result) result[0] = NULL;
     }
 
     // Set return count
@@ -428,20 +459,43 @@ char **get_completions(const char *input, int *count) {
 
 // Get the common prefix of completions
 char *get_common_completion(const char *input) {
+    // Handle empty input safely
+    if (!input || input[0] == '\0') {
+        return strdup("");
+    }
+
     int count;
     char **completions = get_completions(input, &count);
 
-    if (count == 0) {
-        free(completions);
+    if (count == 0 || !completions) {
+        if (completions) free(completions);
         return strdup(input);
     }
 
     char *common = find_common_prefix(completions, count);
+    if (!common) {
+        for (int i = 0; i < count; i++) {
+            if (completions[i]) free(completions[i]);
+        }
+        free(completions);
+        return strdup(input);
+    }
 
     // If there's a directory part in the input, we need to add it back
     char *dir_path = NULL;
     char *file_prefix = NULL;
     parse_path(input, &dir_path, &file_prefix);
+
+    if (!dir_path || !file_prefix) {
+        if (dir_path) free(dir_path);
+        if (file_prefix) free(file_prefix);
+        free(common);
+        for (int i = 0; i < count; i++) {
+            if (completions[i]) free(completions[i]);
+        }
+        free(completions);
+        return strdup(input);
+    }
 
     char *result;
     if (strcmp(dir_path, ".") != 0) {
@@ -453,6 +507,8 @@ char *get_common_completion(const char *input) {
             } else {
                 sprintf(result, "%s/%s", expanded_dir, common);
             }
+        } else {
+            result = strdup(input); // Fall back if allocation fails
         }
         free(expanded_dir);
     } else {
@@ -462,13 +518,13 @@ char *get_common_completion(const char *input) {
     // Clean up
     free(common);
     for (int i = 0; i < count; i++) {
-        free(completions[i]);
+        if (completions[i]) free(completions[i]);
     }
     free(completions);
     free(dir_path);
     free(file_prefix);
 
-    return result;
+    return result ? result : strdup(input); // Final safety check
 }
 
 // Add this new function to format completions in nice columns - fixed version
@@ -541,12 +597,19 @@ static void display_completions_in_columns(char **completions, int count) {
 
 // Now replace the existing display_completions function with this improved version
 void display_completions(const char *input) {
+    // Handle NULL input safely
+    if (!input) {
+        return;
+    }
+
     int count;
     char **completions = get_completions(input, &count);
 
+    if (!completions) {
+        return;  // Memory allocation issue
+    }
+
     if (count == 0) {
-        ssize_t ret = write(STDOUT_FILENO, "\a", 1);  // Terminal bell for no completions
-        (void)ret; // Suppress warning
         free(completions);
         return;
     }
