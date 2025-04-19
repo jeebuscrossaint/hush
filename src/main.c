@@ -25,8 +25,11 @@ int main(int argc, char **argv)
     // Save command history before exiting
     hush_save_history();
 
-    // Cleanup readline
+    // Cleanup readline before deprep terminal
     hush_readline_cleanup();
+
+    // Cleanup terminal
+    rl_deprep_terminal();
 
     // Free history memory
     for (int i = 0; i < hush_history_count; i++) {

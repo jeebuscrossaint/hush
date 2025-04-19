@@ -2,6 +2,7 @@
 #include "readline.h"
 #include <stdlib.h>
 #include <errno.h>
+#include <readline/readline.h>
 
 // Define the global flag
 volatile sig_atomic_t child_running = 0;
@@ -9,8 +10,18 @@ volatile sig_atomic_t child_running = 0;
 void handle_sigint(int sig) {
     if (!child_running) {
         // Only handle for the shell, not for child processes
-        ssize_t ret = write(STDOUT_FILENO, "\n$ ", 3);
-        (void)ret; // Suppress the warning
+
+        // Write a newline
+        write(STDOUT_FILENO, "\n", 1);
+
+        // Tell readline we're on a new line
+        rl_on_new_line();
+
+        // Clear the current input
+        rl_replace_line("", 0);
+
+        // Redisplay the prompt
+        rl_redisplay();
 
         // Ensure our signal handler doesn't interfere with terminal
         signal(SIGINT, handle_sigint);
@@ -19,9 +30,17 @@ void handle_sigint(int sig) {
 
 void handle_sigtstp(int sig) {
     if (!child_running) {
-        // Only handle for the shell, not for child processes
-        ssize_t ret = write(STDOUT_FILENO, "\n$ ", 3);
-        (void)ret; // Suppress the warning
+        // Write a newline
+        write(STDOUT_FILENO, "\n", 1);
+
+        // Tell readline we're on a new line
+        rl_on_new_line();
+
+        // Clear the current input
+        rl_replace_line("", 0);
+
+        // Redisplay the prompt
+        rl_redisplay();
 
         // Ensure our signal handler doesn't interfere with terminal
         signal(SIGTSTP, handle_sigtstp);

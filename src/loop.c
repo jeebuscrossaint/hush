@@ -8,14 +8,20 @@
 void hush_loop(void) {
     char *line;
     char **args;
-    int status;
+    int status = 1;
 
     do {
         // Read input using readline
         line = hush_read_line();
 
-        if (!line || line[0] == '\0') {
-            if (line) free(line);
+        // Check for EOF (Ctrl+D)
+        if (!line) {
+            printf("\n");
+            break;  // Exit the loop on EOF
+        }
+
+        if (line[0] == '\0') {
+            free(line);
             continue;
         }
 
