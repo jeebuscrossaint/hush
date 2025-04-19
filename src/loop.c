@@ -4,6 +4,7 @@
 #include "history.h"
 #include "command_sub.h"
 #include "alias.h"
+#include "chain.h"
 
 void hush_loop(void) {
     char *line;
@@ -42,22 +43,30 @@ void hush_loop(void) {
         char *expanded_line = expand_variables(line);
         free(line);
 
-        args = hush_split_line(expanded_line);
+        // Check if the command contains chain operators (; && ||)
+        if (strstr(expanded_line, ";") || strstr(expanded_line, "&&") || strstr(expanded_line, "||")) {
+            // Execute as a command chain
+            status = execute_command_chain(expanded_line);
+        } else {
+            // Process as a single command (with alias expansion)
+            args = hush_split_line(expanded_line);
 
-        // Expand aliases
-        char **expanded_args = expand_aliases(args);
-        status = hush_execute(expanded_args);
+            // Expand aliases
+            char **expanded_args = expand_aliases(args);
+            status = hush_execute(expanded_args);
 
-        // Clean up - only free expanded_args if it's different from args
-        if (expanded_args != args) {
-            for (int i = 0; expanded_args[i] != NULL; i++) {
-                free(expanded_args[i]);
+            // Clean up - only free expanded_args if it's different from args
+            if (expanded_args != args) {
+                for (int i = 0; expanded_args[i] != NULL; i++) {
+                    free(expanded_args[i]);
+                }
+                free(expanded_args);
             }
-            free(expanded_args);
+
+            free(args);
         }
 
         free(expanded_line);
-        free(args);
 
     } while (status);
 }
