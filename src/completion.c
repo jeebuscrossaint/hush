@@ -8,6 +8,9 @@
 #include <limits.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <errno.h>
+
+#define MANY_COMPLETIONS_THRESHOLD 100
 
 // Define data structure for completions
 typedef struct {
@@ -183,39 +186,163 @@ static void parse_path(const char *input, char **dir_path, char **file_prefix) {
     free(expanded);
 }
 
-// Generate file completions
-static char **generate_completions(const char *input, int *count) {
-    // Initialize return values
+// Get executables from PATH for command completion
+static void add_executables_from_path(completion_list *completions, const char *prefix) {
+    char *path = getenv("PATH");
+    if (!path) return;
+
+    // Make a copy of PATH since strtok modifies its input
+    char *path_copy = strdup(path);
+    if (!path_copy) {
+        perror("hush: strdup error");
+        return;
+    }
+
+    int prefix_len = strlen(prefix);
+    char *dir = strtok(path_copy, ":");
+
+    while (dir) {
+        DIR *d = opendir(dir);
+        if (d) {
+            struct dirent *entry;
+            while ((entry = readdir(d)) != NULL) {
+                // Skip hidden files and directories
+                if (entry->d_name[0] == '.') continue;
+
+                // Check if name starts with prefix
+                if (strncmp(entry->d_name, prefix, prefix_len) == 0) {
+                    // Build full path to check if it's executable
+                    char full_path[PATH_MAX];
+                    snprintf(full_path, PATH_MAX, "%s/%s", dir, entry->d_name);
+
+                    struct stat st;
+                    if (stat(full_path, &st) == 0) {
+                        // Check if it's a regular file and executable
+                        if (S_ISREG(st.st_mode) &&
+                            (st.st_mode & S_IXUSR || st.st_mode & S_IXGRP || st.st_mode & S_IXOTH)) {
+                            completion_add(completions, entry->d_name);
+                        }
+                    }
+                }
+            }
+            closedir(d);
+        }
+        dir = strtok(NULL, ":");
+    }
+
+    free(path_copy);
+}
+
+// Get the completion to show based on current input
+char **get_completions(const char *input, int *count) {
+    char *dir_path = NULL;
+    char *file_prefix = NULL;
+
+    // Setup default return values
     *count = 0;
 
-    // Check for empty input
+    // Check if empty or first word
+    int is_first_word = 1;
+    const char *check = input;
+    while (*check && isspace(*check)) check++; // Skip leading spaces
+
+    while (*check && !isspace(*check)) check++; // Find end of word
+    while (*check && isspace(*check)) check++; // Skip spaces after word
+
+    // If we found more content, it's not the first word
+    if (*check) is_first_word = 0;
+
     if (!input || input[0] == '\0') {
-        char **result = malloc(sizeof(char *));
-        if (!result) {
-            perror("hush: allocation error in completion");
-            return NULL;
+        // Empty input - list executables in PATH
+        completion_list completions;
+        completion_init(&completions);
+
+        add_executables_from_path(&completions, "");
+
+        // Sort completions
+        qsort(completions.items, completions.count, sizeof(char *), completion_compare);
+
+        // Prepare the result array
+        char **result = NULL;
+        if (completions.count > 0) {
+            result = malloc((completions.count + 1) * sizeof(char *));
+            if (!result) {
+                perror("hush: allocation error in completion");
+                completion_free(&completions);
+                *count = 0;
+                return NULL;
+            }
+
+            // Copy items to result
+            for (int i = 0; i < completions.count; i++) {
+                result[i] = strdup(completions.items[i]);
+            }
+            result[completions.count] = NULL;
+        } else {
+            // No completions
+            result = malloc(sizeof(char *));
+            result[0] = NULL;
         }
-        result[0] = NULL;
+
+        *count = completions.count;
+        completion_free(&completions);
         return result;
     }
 
-    // Determine directory to search and prefix to match
-    char *dir_path = NULL;
-    char *file_prefix = NULL;
+    // Parse the input into directory and file prefix
     parse_path(input, &dir_path, &file_prefix);
+
+    // If this is the first word and doesn't start with ./ or / or ~,
+    // it's likely a command rather than a file
+    if (is_first_word &&
+        input[0] != '.' && input[0] != '/' && input[0] != '~') {
+
+        completion_list completions;
+        completion_init(&completions);
+
+        add_executables_from_path(&completions, file_prefix);
+
+        // Sort completions
+        qsort(completions.items, completions.count, sizeof(char *), completion_compare);
+
+        // Prepare the result array
+        char **result = NULL;
+        if (completions.count > 0) {
+            result = malloc((completions.count + 1) * sizeof(char *));
+            if (!result) {
+                perror("hush: allocation error in completion");
+                completion_free(&completions);
+                free(dir_path);
+                free(file_prefix);
+                *count = 0;
+                return NULL;
+            }
+
+            // Copy items to result
+            for (int i = 0; i < completions.count; i++) {
+                result[i] = strdup(completions.items[i]);
+            }
+            result[completions.count] = NULL;
+        } else {
+            // No completions
+            result = malloc(sizeof(char *));
+            result[0] = NULL;
+        }
+
+        *count = completions.count;
+        completion_free(&completions);
+        free(dir_path);
+        free(file_prefix);
+        return result;
+    }
 
     // Open the directory
     DIR *dir = opendir(dir_path);
     if (!dir) {
         free(dir_path);
         free(file_prefix);
-        char **result = malloc(sizeof(char *));
-        if (!result) {
-            perror("hush: allocation error in completion");
-            return NULL;
-        }
-        result[0] = NULL;
-        return result;
+        *count = 0;
+        return malloc(sizeof(char *)); // Return empty array
     }
 
     // Gather matching entries
@@ -265,41 +392,44 @@ static char **generate_completions(const char *input, int *count) {
     qsort(completions.items, completions.count, sizeof(char *), completion_compare);
 
     // Prepare the result array
-    char **result = malloc((completions.count + 1) * sizeof(char *));
-    if (!result) {
-        perror("hush: allocation error in completion");
-        completion_free(&completions);
-        free(dir_path);
-        free(file_prefix);
-        return NULL;
-    }
+    char **result = NULL;
+    if (completions.count > 0) {
+        result = malloc((completions.count + 1) * sizeof(char *));
+        if (!result) {
+            perror("hush: allocation error in completion");
+            completion_free(&completions);
+            free(dir_path);
+            free(file_prefix);
+            *count = 0;
+            return NULL;
+        }
 
-    // Move items to result
-    for (int i = 0; i < completions.count; i++) {
-        result[i] = completions.items[i];
+        // Move items to result
+        for (int i = 0; i < completions.count; i++) {
+            result[i] = strdup(completions.items[i]);
+        }
+        result[completions.count] = NULL;
+    } else {
+        // No completions found
+        result = malloc(sizeof(char *));
+        result[0] = NULL;
     }
-    result[completions.count] = NULL;
 
     // Set return count
     *count = completions.count;
 
     // Clean up
-    free(completions.items);  // Don't free the strings as they're now owned by result
+    completion_free(&completions);
     free(dir_path);
     free(file_prefix);
 
     return result;
 }
 
-// Get the completion to show based on current input
-char **get_completions(const char *input, int *count) {
-    return generate_completions(input, count);
-}
-
 // Get the common prefix of completions
 char *get_common_completion(const char *input) {
     int count;
-    char **completions = generate_completions(input, &count);
+    char **completions = get_completions(input, &count);
 
     if (count == 0) {
         free(completions);
@@ -341,13 +471,82 @@ char *get_common_completion(const char *input) {
     return result;
 }
 
-// Display a list of possible completions
+// Add this new function to format completions in nice columns - fixed version
+static void display_completions_in_columns(char **completions, int count) {
+    if (count == 0) return;
+
+    // Get terminal width
+    int term_width = 80; // Default width
+    char *columns_env = getenv("COLUMNS");
+    if (columns_env) {
+        term_width = atoi(columns_env);
+        if (term_width <= 0) term_width = 80;
+    }
+
+    // Find the maximum completion length
+    int max_len = 0;
+    for (int i = 0; i < count; i++) {
+        int len = strlen(completions[i]);
+        if (len > max_len) max_len = len;
+    }
+
+    // Calculate column width (length + padding)
+    int col_width = max_len + 2;
+
+    // Calculate how many columns can fit in the terminal
+    int num_cols = term_width / col_width;
+    if (num_cols == 0) num_cols = 1; // Ensure at least one column
+
+    // Sort completions alphabetically
+    qsort(completions, count, sizeof(char *), completion_compare);
+
+    // Calculate number of rows needed
+    int num_rows = (count + num_cols - 1) / num_cols;
+
+    // Prepare a buffer for formatted output
+    char *line_buf = malloc(term_width + 1);
+    if (!line_buf) {
+        perror("hush: allocation error in completion display");
+        return;
+    }
+
+    // Print completions in columns, filling across rows first
+    for (int row = 0; row < num_rows; row++) {
+        memset(line_buf, ' ', term_width);
+        line_buf[term_width] = '\0';
+
+        int line_pos = 0;
+        for (int col = 0; col < num_cols; col++) {
+            int index = row * num_cols + col;
+            if (index < count) {
+                int len = strlen(completions[index]);
+                if (line_pos + len <= term_width) {
+                    memcpy(line_buf + line_pos, completions[index], len);
+                    line_pos += col_width;
+                }
+            }
+        }
+
+        // Trim trailing spaces
+        int end = term_width - 1;
+        while (end >= 0 && line_buf[end] == ' ') end--;
+        line_buf[end + 1] = '\0';
+
+        // Write the line
+        printf("%s\n", line_buf);
+    }
+
+    free(line_buf);
+}
+
+// Now replace the existing display_completions function with this improved version
 void display_completions(const char *input) {
     int count;
     char **completions = get_completions(input, &count);
 
     if (count == 0) {
-        putchar('\a');  // Terminal bell for no completions
+        ssize_t ret = write(STDOUT_FILENO, "\a", 1);  // Terminal bell for no completions
+        (void)ret; // Suppress warning
         free(completions);
         return;
     }
@@ -359,42 +558,41 @@ void display_completions(const char *input) {
         return;
     }
 
-    // Calculate display width based on completions
-    int longest = 0;
-    for (int i = 0; i < count; i++) {
-        int len = strlen(completions[i]);
-        if (len > longest) {
-            longest = len;
+    // If there are many completions, ask before displaying them
+    if (count > MANY_COMPLETIONS_THRESHOLD) {
+        char prompt[64];
+        int prompt_len = snprintf(prompt, sizeof(prompt),
+                                "Display all %d possibilities? (y or n) ", count);
+
+        ssize_t ret = write(STDOUT_FILENO, prompt, prompt_len);
+        (void)ret; // Suppress warning
+
+        // Read user's response
+        char c = 0;
+        while (c != 'y' && c != 'Y' && c != 'n' && c != 'N') {
+            ret = read(STDIN_FILENO, &c, 1);
+            (void)ret; // Suppress warning
+        }
+
+        // Write newline
+        ret = write(STDOUT_FILENO, "\n", 1);
+        (void)ret; // Suppress warning
+
+        if (c == 'n' || c == 'N') {
+            // User said no, clean up and return
+            for (int i = 0; i < count; i++) {
+                free(completions[i]);
+            }
+            free(completions);
+            return;
         }
     }
-    longest += 2;  // Add space between columns
 
-    // Get terminal width
-    int term_width = 80;  // Default
-    char *columns_env = getenv("COLUMNS");
-    if (columns_env) {
-        term_width = atoi(columns_env);
-        if (term_width <= 0) term_width = 80;
-    }
-
-    // Calculate columns and rows
-    int columns = term_width / longest;
-    if (columns == 0) columns = 1;
-    int rows = (count + columns - 1) / columns;
-
-    // Print a newline to start listing below the prompt
+    // Print a newline before completions
     printf("\n");
 
-    // Display in columns
-    for (int row = 0; row < rows; row++) {
-        for (int col = 0; col < columns; col++) {
-            int index = col * rows + row;
-            if (index < count) {
-                printf("%-*s", longest, completions[index]);
-            }
-        }
-        printf("\n");
-    }
+    // Display completions in nice columns
+    display_completions_in_columns(completions, count);
 
     // Clean up
     for (int i = 0; i < count; i++) {

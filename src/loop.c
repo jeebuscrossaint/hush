@@ -11,17 +11,16 @@ void hush_loop(void) {
     int status;
 
     do {
-        // Read input (readline function now handles prompt display)
+        // Read input using readline
         line = hush_read_line();
 
-        // Empty line check
-        if (line[0] == '\0') {
-            free(line);
+        if (!line || line[0] == '\0') {
+            if (line) free(line);
             continue;
         }
 
         // Expand history references
-        char *expanded_history = expand_history(line);
+        char *expanded_history = hush_expand_history(line);
         free(line);
         line = expanded_history;
 
@@ -30,8 +29,8 @@ void hush_loop(void) {
         free(line);
         line = cmd_substituted;
 
-        // Add to history
-        add_to_history(line);
+        // Add to history - both our internal history and readline's
+        hush_add_to_history(line);
 
         // Process the line
         char *expanded_line = expand_variables(line);
@@ -39,7 +38,7 @@ void hush_loop(void) {
 
         args = hush_split_line(expanded_line);
 
-        // Expand aliases (if needed - this may already be handled in execute.c)
+        // Expand aliases
         char **expanded_args = expand_aliases(args);
         status = hush_execute(expanded_args);
 
@@ -53,5 +52,6 @@ void hush_loop(void) {
 
         free(expanded_line);
         free(args);
+
     } while (status);
 }

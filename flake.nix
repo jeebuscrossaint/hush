@@ -23,7 +23,7 @@
 
           nativeBuildInputs = with pkgs; [ cmake clang ];
 
-          buildInputs = [ ];
+          buildInputs = [ pkgs.readline ];
 
           cmakeFlags = [
             "-DCMAKE_BUILD_TYPE=Release"
@@ -47,6 +47,7 @@
             valgrind
             bear
             glibc
+            readline
           ];
 
           shellHook = ''
