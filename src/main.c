@@ -5,6 +5,19 @@
 #include "readline.h"
 #include "alias.h"
 #include "dir_stack.h"
+#include "control.h"
+
+int execute_script(const char *filename) {
+    FILE *script = fopen(filename, "r");
+    if (!script) {
+        perror("hush");
+        return 1;
+    }
+
+    int result = process_script_control_flow(script);
+    fclose(script);
+    return result;
+}
 
 int main(int argc, char **argv)
 {
@@ -22,6 +35,10 @@ int main(int argc, char **argv)
 
     // Initialize directory stack
     init_dir_stack();
+
+    if (argc > 1) {
+        return execute_script(argv[1]);
+    }
 
     // Start the shell loop
     hush_loop();

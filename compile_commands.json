@@ -31,6 +31,12 @@
 },
 {
   "directory": "/home/amarnath/Projects/hush",
+  "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/control.c.o -c /home/amarnath/Projects/hush/src/control.c",
+  "file": "/home/amarnath/Projects/hush/src/control.c",
+  "output": "CMakeFiles/hush.dir/src/control.c.o"
+},
+{
+  "directory": "/home/amarnath/Projects/hush",
   "command": "/nix/store/8v6k283dpbc0qkdq81nb6mrxrgcb10i1-gcc-wrapper-14-20241116/bin/gcc  -I/home/amarnath/Projects/hush/include  -O3 -flto -fno-plt -fno-exceptions -fomit-frame-pointer -pipe -std=gnu99 -o CMakeFiles/hush.dir/src/dir_stack.c.o -c /home/amarnath/Projects/hush/src/dir_stack.c",
   "file": "/home/amarnath/Projects/hush/src/dir_stack.c",
   "output": "CMakeFiles/hush.dir/src/dir_stack.c.o"
