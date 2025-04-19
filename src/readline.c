@@ -5,16 +5,62 @@
 #include <string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <ctype.h>
 
 // Readline completion function
 static char **hush_completion(const char *text, int start, int end) {
-    // This prevents readline from doing filename completion
-    rl_attempted_completion_over = 1;
-
-    // Safety check for NULL or empty text
-    if (!text) {
-        return NULL;  // Let readline handle it
+    // Check if the input is empty
+    if (!text || text[0] == '\0') {
+        // For empty input, don't offer any completions
+        return NULL;
     }
+
+    // First, check for path completion (for directories like "inc" → "include/")
+    // We need to check if there are directories matching what's typed
+    DIR *dir = opendir(".");
+    if (dir) {
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL) {
+            // Check if it's a directory and matches the text prefix
+            if (strncmp(entry->d_name, text, strlen(text)) == 0) {
+                struct stat st;
+                if (stat(entry->d_name, &st) == 0 && S_ISDIR(st.st_mode)) {
+                    // Found a matching directory, let readline handle it
+                    closedir(dir);
+                    rl_attempted_completion_over = 0;
+                    return NULL;
+                }
+            }
+        }
+        closedir(dir);
+    }
+
+    // Check if we're completing a command or an argument
+    int in_command_position = 1;
+    for (int i = 0; i < start; i++) {
+        if (!isspace((unsigned char)rl_line_buffer[i])) {
+            in_command_position = 0;
+            break;
+        }
+    }
+
+    // Check if this looks like a path (contains /, starts with . or ~)
+    if (strchr(text, '/') != NULL || text[0] == '.' || text[0] == '~') {
+        // Let readline handle path completion
+        rl_attempted_completion_over = 0;
+        return NULL;
+    }
+
+    // If we're not in the command position (typing an argument), use file completion
+    if (!in_command_position) {
+        rl_attempted_completion_over = 0;
+        return NULL;
+    }
+
+    // Continue with command completion logic
+    rl_attempted_completion_over = 1;
 
     // Get possible completions
     int count = 0;
@@ -22,17 +68,13 @@ static char **hush_completion(const char *text, int start, int end) {
 
     // Check if we got any completions
     if (!completions || count == 0) {
-        // No completions found
         if (completions) free(completions);
-
-        // Return NULL to indicate no completions
         return NULL;
     }
 
-    // Allocate space for matches in readline's expected format
+    // Allocate space for matches
     char **matches = malloc((count + 2) * sizeof(char *));
     if (!matches) {
-        // Memory allocation failed
         for (int i = 0; i < count; i++) {
             if (completions[i]) free(completions[i]);
         }
@@ -40,23 +82,14 @@ static char **hush_completion(const char *text, int start, int end) {
         return NULL;
     }
 
-    // Populate matches array in readline's expected format
-    matches[0] = strdup(text);  // First entry is the partial text
-
-    // Copy completions to matches (offset by 1)
+    // Build matches array
+    matches[0] = strdup(text);
     for (int i = 0; i < count; i++) {
-        if (completions[i]) {
-            matches[i + 1] = completions[i];  // Transfer ownership
-        } else {
-            matches[i + 1] = strdup("");  // Safety fallback
-        }
+        matches[i + 1] = completions[i];
     }
+    matches[count + 1] = NULL;
 
-    matches[count + 1] = NULL;  // NULL terminate the array
-
-    // Only free the array itself, not the strings
     free(completions);
-
     return matches;
 }
 
