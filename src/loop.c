@@ -1,5 +1,6 @@
 #include "loop.h"
 #include "environment.h"
+#include "jobs.h"
 #include "signals.h"
 #include "history.h"
 #include "command_sub.h"
@@ -8,6 +9,7 @@
 #include "chain.h"
 #include "splitline.h"
 #include "readline.h"
+#include "variables.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +28,10 @@ void hush_loop(void) {
     int control_nesting = 0;
 
     do {
+
+        // Update status of any background jobs
+        update_all_jobs_status();
+
         // Set proper prompt based on whether we're in a control block
         char *prompt = in_control_block ? "> " : "$ ";
 

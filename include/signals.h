@@ -20,4 +20,7 @@ void handle_sigint(int sig);
 // Handler for SIGTSTP (Ctrl+Z)
 void handle_sigtstp(int sig);
 
+// Handler for SIGCHLD (child process status change)
+void handle_sigchld(int sig);
+
 #endif // SIGNALS_H

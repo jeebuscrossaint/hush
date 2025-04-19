@@ -3,6 +3,7 @@
 #include "pipes.h"
 #include "glob.h"
 #include "alias.h"
+#include "variables.h"
 
 #include <sys/stat.h>
 #include <limits.h>
@@ -135,5 +136,6 @@ int hush_execute(char **args)
             }
             free(expanded_args);
         }
+    set_last_exit_status(result);
     return result;
 }
